@@ -99,7 +99,7 @@ router.post("/task", authMiddlerware, async (req, res) => {
         const response = await tx.task.create({
             data: {
                 title: parseData.data.title || "",
-                amount: "1",
+                amount: 1 * 1000_000_000,
                 signature: parseData.data.signature,
                 user_id: userId
             }
