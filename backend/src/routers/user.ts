@@ -22,6 +22,65 @@ const s3Client = new S3Client({
     region: "ap-south-1"
 })
 
+
+router.get("/task", authMiddlerware, async (req, res) => {
+    // @ts-ignore
+    const taksId: String = req.query.taskId;
+
+    // @ts-ignore
+    const userId: String = req.userId;
+
+    const taskDetails = await prismaClient.task.findFirst({
+        where: {
+            user_id: Number(userId),
+            id: Number(taksId)
+        },
+        include: {
+            options: true
+        }
+    })
+
+    if (!taskDetails) {
+        return res.status(411).json({
+            message: "You dont have access to this task"
+        })
+    }
+
+    const responses = await prismaClient.submission.findMany({
+        where: {
+            task_id: Number(taksId),
+        },
+        include: {
+            option: true
+        }
+    });
+
+    const result: Record<string, {
+        count: number;
+        option: {
+            imageUrl: string
+        }
+    }> = {};
+
+    taskDetails.options.forEach(option => {
+        result[option.id] = {
+            count: 0,
+            option: {
+                imageUrl: option.image_url
+            }
+        }
+    })
+
+    responses.forEach(r => {
+        result[r.option_id]!.count++
+    })
+
+
+    res.json({
+        result
+    })
+})
+
 router.post("/task", authMiddlerware, async (req, res) => {
     //validate the input from user
     const body = req.body;
@@ -29,7 +88,7 @@ router.post("/task", authMiddlerware, async (req, res) => {
     const userId = req.userId;
     const parseData = createTaskInput.safeParse(body)
 
-    
+
     if (!parseData.success) {
         return res.status(411).json({
             message: "You have sent the wrong inputs"
