@@ -14,18 +14,23 @@ const prismaClient = new PrismaClient();
 const router = Router();
 
 
-// router.get("/balance", workerauthMiddlerware, async (req, res) => {
+router.get("/balance", workerauthMiddlerware, async (req, res) => {
 
-//     // @ts-ignore
-//     const userId = req.userId;
+    // @ts-ignore
+    const userId: string = req.userId;
 
-//     const balance = prismaClient.worker.findFirst({
-//         where: {
-//             id: userId
-//         }
-//     })
+    const worker = await  prismaClient.worker.findFirst({
+        where: {
+            id: Number(userId)
+        }
+    })
 
-// })
+    res.json({
+        pendingAmount: worker?.pending_amount,
+        lockedAmount: worker?.locked_amount
+    })
+
+})
 
 router.post("/submission", workerauthMiddlerware, async (req, res) => {
     // @ts-ignore
@@ -140,5 +145,3 @@ router.post("/signin", async (req, res) => {
 export default router;
 
 
-
-// 3:11:57
