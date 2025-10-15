@@ -14,6 +14,66 @@ const prismaClient = new PrismaClient();
 const router = Router();
 
 
+router.post("/payout", workerauthMiddlerware, async (req, res) => {
+    // @ts-ignore
+    const userId: string = req.userId
+    const worker = await prismaClient.worker.findFirst({
+        where: {
+            id: Number(userId)
+        }
+    })
+
+    const address = worker?.address;
+
+    if(!address) {
+        return res.json({
+            message : "User not found"
+        })
+    }
+    //logic to create a txns
+    const txnId = "0x1226546"
+
+
+    // user is able to send multiple reqts need to fix this 
+    // dont knwo how though
+    console.log(worker.pending_amount);
+    await prismaClient.$transaction(async tx => {
+        await tx.worker.update({
+            where: {
+                id: Number(userId)
+             }, 
+             data: {
+                pending_amount: {
+                    decrement: worker.pending_amount
+                },
+                locked_amount: {
+                    increment: worker.pending_amount
+                }
+             }
+        })
+        
+        await tx.payouts.create({
+            data: {
+                worker_id: Number(userId),
+                amount: worker.pending_amount,
+                status: "Processign",
+                signature: txnId
+            }
+        })
+    })
+    
+    console.log(worker.locked_amount);
+    /**
+     * After doing this we need to send the tnx to eth/sol
+     * blockchain
+     */
+
+    res.json({
+        message: "Processing payout",
+        amount: worker.pending_amount
+    })
+})
+
 router.get("/balance", workerauthMiddlerware, async (req, res) => {
 
     // @ts-ignore
@@ -143,5 +203,3 @@ router.post("/signin", async (req, res) => {
 });
 
 export default router;
-
-

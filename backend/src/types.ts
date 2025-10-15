@@ -12,5 +12,5 @@ export const createTaskInput = z.object({
 
 export const createSubmissionInput = z.object({
     taskId: z.string(),
-    selection: z.int()
+    selection: z.string()
 })
