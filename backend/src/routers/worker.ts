@@ -7,11 +7,25 @@ import { createSubmissionInput } from "../types.js";
 
 const TOTAL_SUBMISSION = 100;
 
-const TOTAL_DECIMALS = 1000_000_000;
+const TOTAL_DECIMALS = 1000;
 
 const jwtSecret = process.env.JWT_SECRET_WORKER || "";
 const prismaClient = new PrismaClient();
 const router = Router();
+
+
+// router.get("/balance", workerauthMiddlerware, async (req, res) => {
+
+//     // @ts-ignore
+//     const userId = req.userId;
+
+//     const balance = prismaClient.worker.findFirst({
+//         where: {
+//             id: userId
+//         }
+//     })
+
+// })
 
 router.post("/submission", workerauthMiddlerware, async (req, res) => {
     // @ts-ignore
@@ -27,32 +41,39 @@ router.post("/submission", workerauthMiddlerware, async (req, res) => {
             })
         }
 
-        const amountMade = (Number(task.amount) / TOTAL_SUBMISSION).toString()
+        const amountMade = (task.amount) / TOTAL_SUBMISSION
+        console.log(amountMade);
 
-        const submission = await prismaClient.$transaction(async x => {
+        const submission = await prismaClient.$transaction(async tnx => {
 
-            const submission = await prismaClient.submission.create({
+            const submission = await tnx.submission.create({
                 data: {
                     option_id: Number(parsedBody.data.selection),
                     worker_id: userId,
                     task_id: Number(parsedBody.data.taskId),
                     amount: amountMade
-                }
-            })
+                },
 
-            await prismaClient.worker.update({
+            })
+            console.log("new line", amountMade);
+
+            await tnx.worker.update({
                 where: {
                     id: userId
                 },
                 data: {
                     pending_amount: {
-                        increment: Number(amountMade) * TOTAL_DECIMALS
+                        increment: amountMade
                     }
                 }
             })
 
             return submission
-        })
+        },
+            {
+                maxWait: 5000, // default 2000ms - time to wait for transaction to start
+                timeout: 10000,
+            })
 
 
 
@@ -62,7 +83,9 @@ router.post("/submission", workerauthMiddlerware, async (req, res) => {
             amountMade
         })
     } else {
-
+        res.status(411).json({
+            message: "Error occured while submiting next task"
+        })
     }
 })
 
@@ -115,3 +138,7 @@ router.post("/signin", async (req, res) => {
 });
 
 export default router;
+
+
+
+// 3:11:57
