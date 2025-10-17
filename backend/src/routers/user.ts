@@ -33,7 +33,7 @@ router.get("/task", authMiddlerware, async (req, res) => {
     const taskDetails = await prismaClient.task.findFirst({
         where: {
             user_id: Number(userId),
-            id: Number(taksId)
+            id: Number(taksId),
         },
         include: {
             options: true
@@ -77,7 +77,11 @@ router.get("/task", authMiddlerware, async (req, res) => {
 
 
     res.json({
-        result
+
+        taskDetails: {
+            title: taskDetails.title
+
+        }, result
     })
 })
 
@@ -136,7 +140,7 @@ router.get("/presignedUrl", authMiddlerware, async (req, res) => {
         },
         Expires: 3600
     })
-    
+
     res.json({
         presignedUrl: url,
         fields
