@@ -136,7 +136,7 @@ router.get("/presignedUrl", authMiddlerware, async (req, res) => {
         },
         Expires: 3600
     })
-
+    
     res.json({
         presignedUrl: url,
         fields
