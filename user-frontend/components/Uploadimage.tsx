@@ -2,7 +2,7 @@
 import axios, { formToJSON } from "axios";
 import { useState } from "react"
 import { BACKEND_URL, CLOUDFRONT_URL } from "../utils";
-export function Uploadimage({ onImageAdded, image }: {
+export function UploadImage({ onImageAdded, image }: {
     onImageAdded: (image: string) => void;
     image?: string
 }) {
@@ -36,7 +36,7 @@ export function Uploadimage({ onImageAdded, image }: {
 
             const awsResponse = await axios.post(presignedUrl, formData);
 
-            onImageAdded(`${CLOUDFRONT_URL}/${response.data.fields["Key"]}`)
+            onImageAdded(`${CLOUDFRONT_URL}/${response.data.fields["key"]}`)
         } catch (error) {
             console.log(error);
         }

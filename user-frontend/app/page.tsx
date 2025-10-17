@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { Appbar } from "../components/Appbar";
-import { Uploadimage } from "../components/Uploadimage";
 import { useState } from "react";
 import { Hero } from "@/components/Hero";
+import { Upload } from "@/components/Upload";
 
 export default function Home() {
    const [uploadedImage, setUploadedImage] = useState<string>();
@@ -12,7 +12,7 @@ export default function Home() {
     <main>
       <Appbar />
       <Hero />
-      <Uploadimage
+      <Upload
       />
     </main>    
 
