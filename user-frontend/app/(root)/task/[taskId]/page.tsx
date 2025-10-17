@@ -3,7 +3,6 @@
 import { Appbar } from "@/components/Appbar"
 import { BACKEND_URL } from "@/utils"
 import axios from "axios"
-import { error } from "console";
 import React, { useEffect, useState } from "react";
 
 
@@ -23,7 +22,6 @@ export default function Page({ params }
     
  : { params: Promise<{ taskId: string }> }) {
     const { taskId } = React.use(params)
-    console.log("taskId:", taskId);
 
     const [result, setResult] = useState<Record<string, {
         count: number;
@@ -37,9 +35,7 @@ export default function Page({ params }
     }>({});
 
     useEffect(() => {
-        console.log("Fetching taskId:", taskId);
         getTaskDetails(taskId).then((data) => {
-            console.log("API Response:", data);
             setResult(data.result)
             setTaskDetails(data.taskDetails)
         })

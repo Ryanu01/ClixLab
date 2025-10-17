@@ -4,12 +4,7 @@ import workerRouter from "./routers/worker.js"
 import cors from "cors";
 const app = express();
 app.use(express.json());
-app.use(cors({
-    origin: 'http://localhost:3000',  // Your frontend URL
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors());
 app.use("/v1/user", userRouter);
 app.use("/v1/worker", workerRouter);
 

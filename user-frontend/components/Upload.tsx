@@ -28,7 +28,7 @@ export const Upload = () => {
 
         router.push(`/task/${response.data.id}`);
     }
-    console.log(images);
+   
     
     return (
         <div className="flex justify-center">
