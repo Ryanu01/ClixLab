@@ -8,13 +8,14 @@ import dotenv from "dotenv";
 import { authMiddlerware } from "../middleware.js";
 import { createTaskInput } from "../types.js";
 import nacl from "tweetnacl";
-import { PublicKey } from "@solana/web3.js";
-
+import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 dotenv.config();
 
 const DEFAULT_TITLE = "select the most clickable thumbnail"
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET || "";
+const connection = new Connection(process.env.RPC_URL ?? "");
+const PARENT_WALLET_ADDRESS = process.env.PUBLIC_ADDRESS ?? ""
 const prismaClient = new PrismaClient();
 const s3Client = new S3Client({
     credentials: {
@@ -27,11 +28,11 @@ const s3Client = new S3Client({
 
 prismaClient.$transaction(
     async (prisma) => {
-      // Code running in a transaction...
+        // Code running in a transaction...
     },
     {
-      maxWait: 5000, // default: 2000
-      timeout: 20000, // default: 5000
+        maxWait: 5000, // default: 2000
+        timeout: 20000, // default: 5000
     }
 )
 
@@ -99,12 +100,34 @@ router.get("/task", authMiddlerware, async (req, res) => {
 })
 
 router.post("/task", authMiddlerware, async (req, res) => {
+    const TOTAL_DECIMALS = process.env.TOTAL_DECIMALS ? Number(process.env.TOTAL_DECIMALS) : 1000000000;
+
     //validate the input from user
     const body = req.body;
     // @ts-ignore
     const userId = req.userId;
     const parseData = createTaskInput.safeParse(body)
+    const taskAmount = Math.floor(0.1 * TOTAL_DECIMALS);
 
+    console.log('TOTAL_DECIMALS:', TOTAL_DECIMALS);
+    console.log('Task amount (in lamports):', taskAmount);
+
+    if (!taskAmount || isNaN(taskAmount)) {
+        return res.status(500).json({
+            message: "Failed to calculate task amount. Check TOTAL_DECIMALS env variable."
+        });
+    }
+    const user = await prismaClient.user.findFirst({
+        where: {
+            id: userId
+        }
+    })
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found"
+        });
+    }
 
     if (!parseData.success) {
         return res.status(411).json({
@@ -112,13 +135,41 @@ router.post("/task", authMiddlerware, async (req, res) => {
         })
     }
 
+    const transaction = await connection.getTransaction(parseData.data.signature, {
+        maxSupportedTransactionVersion: 1
+    })
+
+    console.log(transaction);
+
+    if ((transaction?.meta?.postBalances[1] ?? 0) - (transaction?.meta?.preBalances[1] ?? 0) !== 100000000) {
+        return res.status(411).json({
+            message: "Transaction signature/amount incorrect"
+        })
+    }
+
+
+    if (transaction?.transaction.message.getAccountKeys().get(1)?.toString() !== PARENT_WALLET_ADDRESS) {
+        return res.status(411).json({
+            message: "Transaction sent to worng address"
+        })
+    }
+
+    if (transaction.transaction.message.getAccountKeys().get(0)?.toString() !== user?.address) {
+        return res.status(411).json({
+            message: "Transaction initialized from different wallet address"
+        })
+    }
     let response = await prismaClient.$transaction(async tx => {
         const response = await tx.task.create({
             data: {
                 title: parseData.data.title || DEFAULT_TITLE,
-                amount: 1 * 1000_000_000,
+                amount: taskAmount,
                 signature: parseData.data.signature,
-                user_id: userId
+                user: {
+                    connect: {
+                        id: userId
+                    }
+                }
             }
         })
 
@@ -162,18 +213,19 @@ router.get("/presignedUrl", authMiddlerware, async (req, res) => {
 
 router.post("/signin", async (req, res) => {
     // Todo: Add sign verification logic here
-    const { publicKey, signature} = req.body;
+    const { publicKey, signature } = req.body;
     const message = new TextEncoder().encode("Sign in to ClixLab")
 
+    console.log(publicKey)
     const result = nacl.sign.detached.verify(
-        message, 
+        message,
         new Uint8Array(signature.data),
         new PublicKey(publicKey).toBytes()
     )
 
     console.log(result);
-    
-    if(!result) {
+
+    if (!result) {
         return res.status(411).json({
             message: "Incorrect signature"
         })

@@ -13,6 +13,7 @@ import {
 import { clusterApiUrl } from '@solana/web3.js';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
+import { RPC_URL } from "@/utils/config";
 
 
 export default function RootLayout({
@@ -22,7 +23,7 @@ export default function RootLayout({
 }>) {
   const network = WalletAdapterNetwork.Devnet;
 
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const endpoint =  RPC_URL
 
   const wallets = useMemo(
     () => [],
