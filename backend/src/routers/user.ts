@@ -23,6 +23,17 @@ const s3Client = new S3Client({
 })
 
 
+prismaClient.$transaction(
+    async (prisma) => {
+      // Code running in a transaction...
+    },
+    {
+      maxWait: 5000, // default: 2000
+      timeout: 20000, // default: 5000
+    }
+)
+
+
 router.get("/task", authMiddlerware, async (req, res) => {
     // @ts-ignore
     const taksId: String = req.query.taskId;
@@ -102,7 +113,7 @@ router.post("/task", authMiddlerware, async (req, res) => {
     let response = await prismaClient.$transaction(async tx => {
         const response = await tx.task.create({
             data: {
-                title: parseData.data.title || "",
+                title: parseData.data.title || DEFAULT_TITLE,
                 amount: 1 * 1000_000_000,
                 signature: parseData.data.signature,
                 user_id: userId

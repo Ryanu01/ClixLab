@@ -19,6 +19,7 @@ export const NextTask = () => {
 
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         setLoading(true)
@@ -62,10 +63,15 @@ export const NextTask = () => {
         <div>
             <div className="text-2xl pt-20 flex justify-center">
                 {currentTask.title}
+                {submitting && "Submitting"}
                 
             </div>
             <div className="flex justify-center pt-8">
                 {currentTask.options.map(option => <Option onSelect={async () => {
+                    setSubmitting(true);
+                    try {
+
+                    
                     const response = await axios.post(`${BACKEND_URL}/v1/worker/submission`, {
                         taskId: currentTask.id.toString(),
                         selection: option.id.toString()
@@ -75,6 +81,7 @@ export const NextTask = () => {
                         }
                     });
 
+
                     const nextTask = response.data.nextTask
 
                     if(nextTask) {
@@ -82,6 +89,10 @@ export const NextTask = () => {
                     }else {
                         setCurrentTask(null)
                     }
+                } catch(e) {
+                    console.log(e);
+                }
+                setSubmitting(false)
                 }} key={option.id} imageUrl={option.image_url}/>)}
             </div>
         </div>

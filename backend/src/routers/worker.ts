@@ -137,7 +137,7 @@ router.post("/submission", workerauthMiddlerware, async (req, res) => {
         },
             {
                 maxWait: 5000, // default 2000ms - time to wait for transaction to start
-                timeout: 10000,
+                timeout: 20000,
             })
 
 
