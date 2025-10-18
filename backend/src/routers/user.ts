@@ -7,6 +7,8 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { authMiddlerware } from "../middleware.js";
 import { createTaskInput } from "../types.js";
+import nacl from "tweetnacl";
+import { PublicKey } from "@solana/web3.js";
 
 dotenv.config();
 
@@ -160,11 +162,26 @@ router.get("/presignedUrl", authMiddlerware, async (req, res) => {
 
 router.post("/signin", async (req, res) => {
     // Todo: Add sign verification logic here
-    const hardcodedWalletAddress = process.env.PUBLIC_ADDRESS || "";
+    const { publicKey, signature} = req.body;
+    const message = new TextEncoder().encode("Sign in to ClixLab")
+
+    const result = nacl.sign.detached.verify(
+        message, 
+        new Uint8Array(signature.data),
+        new PublicKey(publicKey).toBytes()
+    )
+
+    console.log(result);
+    
+    if(!result) {
+        return res.status(411).json({
+            message: "Incorrect signature"
+        })
+    }
 
     const existingUser = await prismaClient.user.findFirst({
         where: {
-            address: hardcodedWalletAddress
+            address: publicKey
         }
     })
 
@@ -178,7 +195,7 @@ router.post("/signin", async (req, res) => {
 
         const user = await prismaClient.user.create({
             data: {
-                address: hardcodedWalletAddress,
+                address: publicKey,
             }
         })
         const token = jwt.sign({

@@ -1,16 +1,29 @@
+"use client"
 import { WalletDisconnectButton, WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useEffect } from "react";
+import axios from "axios";
+import { BACKEND_URL } from "@/utils";
 
 export const Appbar = () => {
     const { publicKey, signMessage } = useWallet();
+    
 
-    const message = new TextEncoder().encode("Sign in to ClixLab");
-
+    
     async function signAndSend() {
+        if(!publicKey) {
+            return;
+        }
+        const message = new TextEncoder().encode("Sign in to ClixLab");
         const signature = await signMessage?.(message)
         console.log(signature);
+        console.log(publicKey);
+        const response = await axios.post(`${BACKEND_URL}/v1/user/signin`, {
+            signature,
+            publicKey: publicKey?.toString()
+        });
         
+        localStorage.setItem("token", response.data.token)
     }
 
     useEffect(() => {
