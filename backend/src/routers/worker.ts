@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import { workerauthMiddlerware } from "../middleware.js";
 import { getNextTask } from "../db.js";
 import { createSubmissionInput } from "../types.js";
+import { PublicKey } from "@solana/web3.js";
+import nacl from "tweetnacl";
 
 const TOTAL_SUBMISSION = 100;
 
@@ -172,11 +174,28 @@ router.get("/nextTask", workerauthMiddlerware, async (req, res) => {
 })
 
 router.post("/signin", async (req, res) => {
-    const hardcodedWalletAddress = process.env.PUBLIC_ADDRESS || "";
+
+    const { publicKey, signature } = req.body;
+    const message = new TextEncoder().encode("Sign in to ClixLab as a worker")
+
+    console.log(publicKey)
+    const result = nacl.sign.detached.verify(
+        message,
+        new Uint8Array(signature.data),
+        new PublicKey(publicKey).toBytes()
+    )
+
+    console.log(result);
+
+    if (!result) {
+        return res.status(411).json({
+            message: "Incorrect signature"
+        })
+    }
 
     const existingUser = await prismaClient.worker.findFirst({
         where: {
-            address: hardcodedWalletAddress
+            address: publicKey
         }
     })
 
@@ -190,7 +209,7 @@ router.post("/signin", async (req, res) => {
 
         const user = await prismaClient.worker.create({
             data: {
-                address: hardcodedWalletAddress,
+                address: publicKey,
                 pending_amount: 0,
                 locked_amount: 0
             }
