@@ -27,5 +27,8 @@
     "tweetnacl": "^1.0.3",
     "typescript": "^5.9.3",
     "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/bs58": "^4.0.4"
   }
 }

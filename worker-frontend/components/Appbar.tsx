@@ -1,17 +1,17 @@
-"use client"
+'use client'
 import { WalletDisconnectButton, WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { BACKEND_URL } from "@/utils";
 
 export const Appbar = () => {
     const { publicKey, signMessage } = useWallet();
-    
+    const [balance, setBalance] = useState(0);
 
-    
+
     async function signAndSend() {
-        if(!publicKey) {
+        if (!publicKey) {
             return;
         }
         const message = new TextEncoder().encode("Sign in to ClixLab as a worker");
@@ -22,7 +22,9 @@ export const Appbar = () => {
             signature,
             publicKey: publicKey?.toString()
         });
-        
+
+        setBalance(response.data.amount)
+
         localStorage.setItem("token", response.data.token)
     }
 
@@ -35,7 +37,19 @@ export const Appbar = () => {
             <div className="text-2xl pl-4 flex justify-center pt-3">
                 ClixLab
             </div>
-            <div className="text-xl pr-4 ">
+            <div className="text-xl pr-4 flex">
+                <button className="mr-5 text-white bg-gray-800 hover:bg-gray-900 focus: outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-full tetx-sm px-5 py-2.5 mb-2 dark:bg-gray-800 dark: hover:bg-gray-700 dark: focus:ring-gray-700 dark:border-gray-700"
+                    onClick={() => {
+                        axios.post(`${BACKEND_URL}/v1/worker/payout`, {
+
+                        }, {
+                            headers: {
+                                "Authorization": localStorage.getItem("token")
+                            }
+                        })
+                    }}>
+                    Pay me out {(balance)} SOL</button>
+
                 {publicKey ? <WalletDisconnectButton /> : <WalletMultiButton />}
 
             </div>
